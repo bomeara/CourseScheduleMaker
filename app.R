@@ -1,3 +1,14 @@
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
+library(shiny)
+
 convert.to.numeric.semester <- function(semester) {
   year <- strsplit(semester, " ")[[1]][2] 
   suffix <- ".00"
@@ -164,22 +175,29 @@ optimize.valid.schedule <- function(course.semester.pairs=course.semester.pairs.
 }
 
 
-run.viz <- function() {
+
   course.semester.pairs<-course.semester.pairs.generate()
+  
   courses <- sort(unique(course.semester.pairs$Course))
   names(courses) <- courses
-  priority.courses <- courses[-which(grepl("BIO", courses))]
+  course.semester.pairs.to.prioritize <- course.semester.pairs[which(as.numeric(course.semester.pairs$Semester)>2019.6),]
+  priority.courses <- sort(unique(course.semester.pairs.to.prioritize$Course))
+  names(priority.courses) <- priority.courses
+  priority.courses <- courses[-which(grepl("BIO", priority.courses))]
   ui <- fluidPage(
     
     sidebarLayout(position = "left",
                   
                   sidebarPanel(
-                    sliderInput("max.courses", "Maximum number of courses:",
+                    sliderInput("max.courses", "Maximum number of EEB/Bio courses during undergrad:",
                                 min = 6, max = 20,
-                                value = 14),
+                                value = 14, step=1),
+                    sliderInput("courses.per.semester", "Min and max EEB courses per semester:",
+                                min = 0, max = 5,
+                                value = c(1,3), step=1),
                     checkboxGroupInput("variable", "Courses to prioritize:",
                                        choices=priority.courses )          
-                    ),
+                  ),
                   mainPanel(
                     tableOutput("data")
                   )
@@ -194,7 +212,7 @@ run.viz <- function() {
       course.preferences <- rep(0.01, length(courses))
       names(course.preferences) <- courses
       course.preferences[input$variable] <- 1
-      final.result <- optimize.valid.schedule(course.preferences=course.preferences, max.courses=as.integer(input$max.courses))
+      final.result <- optimize.valid.schedule(course.preferences=course.preferences, max.courses=as.integer(input$max.courses), min.per.semester=as.integer(input$courses.per.semester)[1], max.per.semester=as.integer(input$courses.per.semester)[2])
       final.result$schedule$Semester <- sapply(final.result$schedule$Semester, convert.to.text.semester)
       final.result$schedule$Priority <- ifelse(final.result$schedule$Weight==1.0,"Yes", "")
       final.result$schedule <- final.result$schedule[,-which(colnames(final.result$schedule)=="Weight")]
@@ -203,4 +221,4 @@ run.viz <- function() {
   }
   
   shinyApp(ui, server)
-}
+
