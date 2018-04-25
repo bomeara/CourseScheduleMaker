@@ -185,7 +185,7 @@ optimize.valid.schedule <- function(course.semester.pairs=course.semester.pairs.
   names(priority.courses) <- priority.courses
   priority.courses <- courses[-which(grepl("BIO", priority.courses))]
   ui <- fluidPage(
-    
+    titlePanel("Sample EEB undergraduate schedule generator"),
     sidebarLayout(position = "left",
                   
                   sidebarPanel(
