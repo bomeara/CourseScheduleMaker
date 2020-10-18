@@ -15,7 +15,7 @@ read.course.info <- function(file="EEBCourses.tsv") {
   return(course.info)
 }
 
-read.schedule <- function(file="EEBSchedule.tsv") {
+read.schedule <- function(file="EEBScheduleNew.txt") {
   schedule <- read.delim(file,stringsAsFactors=FALSE)
   return(schedule)
 }
