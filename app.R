@@ -12,38 +12,57 @@ library(stringr)
 
 read.course.info <- function(file="EEBCourses.tsv") {
   course.info <- read.delim(file,stringsAsFactors=FALSE)
+  course.info <- subset(course.info, !grepl("N", course.info$Counts.for.EEB))
   return(course.info)
 }
 
 read.schedule <- function(file="EEBScheduleNew.txt") {
-  schedule <- read.delim(file,stringsAsFactors=FALSE)
+  schedule <- read.delim(file,stringsAsFactors=FALSE, row.names=1)
   return(schedule)
 }
 
 extract.course.number <- function(x) {
-  return(gsub("\\(", '', gsub("\\)", '', str_extract(x, "\\(.*\\)"))))
+  #return(gsub("\\(", '', gsub("\\)", '', str_extract(x, "\\(.*\\)"))))\
+  return(substr(x, 1, 7))
 }
+
+
+# course.semester.pairs.generate <- function(schedule=read.schedule()) {
+#   course.grid <- schedule
+#   colnames(course.grid) <- sapply(colnames(course.grid), convert.to.numeric.semester)
+#   course.semester.pairs <- data.frame(matrix(nrow=0, ncol=3))
+#   for (semester.index in sequence(ncol(course.grid))) {
+#     for (course.index in sequence(nrow(course.grid))) {
+#       if(!is.na(course.grid[course.index, semester.index])) {
+#         course.semester.pairs <- rbind(course.semester.pairs, c(extract.course.number(course.grid[course.index,semester.index]), course.grid[course.index,semester.index], colnames(course.grid)[semester.index]), stringsAsFactors=FALSE)
+#       }
+#     }
+#   }
+#   colnames(course.semester.pairs) <- c("Course.Number", "Course", "Semester")
+#   course.semester.pairs <- course.semester.pairs[order(course.semester.pairs$Semester),]
+#   course.semester.pairs$Semester <- as.character(course.semester.pairs$Semester)
+#   course.semester.pairs <- course.semester.pairs[which(nchar(course.semester.pairs$Course)>0),]
+#   return(course.semester.pairs)
+# }
 
 
 course.semester.pairs.generate <- function(schedule=read.schedule()) {
-  course.grid <- schedule
-  colnames(course.grid) <- sapply(colnames(course.grid), convert.to.numeric.semester)
-  course.semester.pairs <- data.frame(matrix(nrow=0, ncol=3))
-  for (semester.index in sequence(ncol(course.grid))) {
-    for (course.index in sequence(nrow(course.grid))) {
-      if(!is.na(course.grid[course.index, semester.index])) {
-        course.semester.pairs <- rbind(course.semester.pairs, c(extract.course.number(course.grid[course.index,semester.index]), course.grid[course.index,semester.index], colnames(course.grid)[semester.index]), stringsAsFactors=FALSE)
-      }
-    }
-  }
-  colnames(course.semester.pairs) <- c("Course.Number", "Course", "Semester")
-  course.semester.pairs <- course.semester.pairs[order(course.semester.pairs$Semester),]
-  course.semester.pairs$Semester <- as.character(course.semester.pairs$Semester)
-  course.semester.pairs <- course.semester.pairs[which(nchar(course.semester.pairs$Course)>0),]
-  return(course.semester.pairs)
+	course.grid <- schedule
+	colnames(course.grid) <- sapply(colnames(course.grid), convert.to.numeric.semester)
+	course.semester.pairs <- data.frame(matrix(nrow=0, ncol=3))
+	for (semester.index in sequence(ncol(course.grid))) {
+		for (course.index in sequence(nrow(course.grid))) {
+			if(nchar(course.grid[course.index, semester.index])>0) {
+			course.semester.pairs <- rbind(course.semester.pairs, c(extract.course.number(rownames(course.grid)[course.index]), rownames(course.grid)[course.index], colnames(course.grid)[semester.index]), stringsAsFactors=FALSE)
+			}
+		}
+	}
+	colnames(course.semester.pairs) <- c("Course.Number", "Course", "Semester")
+	course.semester.pairs <- course.semester.pairs[order(course.semester.pairs$Semester),]
+	course.semester.pairs$Semester <- as.character(course.semester.pairs$Semester)
+	course.semester.pairs <- course.semester.pairs[which(nchar(course.semester.pairs$Course)>0),]
+	return(course.semester.pairs)
 }
-
-
 
 
 
@@ -90,14 +109,28 @@ generate.coreq.table <- function(course.info = read.course.info()) {
   return(course.info[relevant.rows,c("Course.Number", "Coreqs")])
 }
 
+# generate.track.vector <- function(course.info = read.course.info()) {
+#   tracks <- unique(unlist(strsplit(course.info$Tracks, split="\\,\\s+")))
+#   track.vector <- rep("",length(tracks))
+#   names(track.vector) <- tracks
+#   for (i in sequence(length(tracks))) {
+#     track.vector[i] <- paste0(course.info$Course.Number[grepl(names(track.vector)[i], course.info$Tracks)], collapse=", ")
+#   }
+#   return(track.vector)
+# }
+
 generate.track.vector <- function(course.info = read.course.info()) {
-  tracks <- unique(unlist(strsplit(course.info$Tracks, split="\\,\\s+")))
-  track.vector <- rep("",length(tracks))
-  names(track.vector) <- tracks
-  for (i in sequence(length(tracks))) {
-    track.vector[i] <- paste0(course.info$Course.Number[grepl(names(track.vector)[i], course.info$Tracks)], collapse=", ")
-  }
-  return(track.vector)
+	trackcols <- which(grepl("Focus", colnames(course.info)))
+	tracks <- colnames(course.info)[trackcols]
+	tracks <- gsub("\\.\\.\\.", " and ", tracks)
+	tracks <- gsub("Focus\\.\\.", "", tracks)
+	tracks <- gsub("\\.", " ", tracks)
+	track.vector <- rep("",length(tracks))
+  	names(track.vector) <- tracks
+  	for (i in sequence(length(tracks))) {
+    	track.vector[i] <- paste0(course.info$Course.Number[nchar(course.info[,trackcols[i]])>0], collapse=", ")
+  	}
+  	return(track.vector)
 }
 
 
@@ -109,6 +142,8 @@ generate.schedule <- function(course.semester.pairs=course.semester.pairs.genera
   if(!allow.500) {
     course.semester.pairs <- course.semester.pairs[!grepl("5[[:digit:]][[:digit:]]", course.semester.pairs$Course.Number),]
   }
+    course.semester.pairs <- course.semester.pairs[!grepl("6[[:digit:]][[:digit:]]", course.semester.pairs$Course.Number),] #get rid of 600 level
+
   semesters <- unique(course.semester.pairs$Semester)
   if(is.null(course.preferences)) {
     course.preferences <- rep(0.5, length(unique(course.semester.pairs$Course)))
@@ -118,29 +153,32 @@ generate.schedule <- function(course.semester.pairs=course.semester.pairs.genera
   schedule <- data.frame(matrix(nrow=0, ncol=2))
   for(semester.index in sequence(min(length(semesters), max.semesters))) {
     local.schedule <- subset(course.semester.pairs, course.semester.pairs$Semester==semesters[semester.index])
+	print(semester.index)
+	print(local.schedule)
     if(nrow(local.schedule)>0) {
       number.courses.to.pick <- floor(runif(1, min.per.semester, min(nrow(local.schedule),max.per.semester)+1))
       selected.courses <- sample.int(n=nrow(local.schedule), size=min(number.courses.to.pick, nrow(local.schedule), na.rm=TRUE),prob=local.schedule$Weight)
-      if(semester.index==1) { #hardcoding 150 just to start
-        selected.courses <- which(grepl("BIO 150", local.schedule$Course))
-      }
-      if(semester.index==2) { #hard coding the 200 level required courses
-        selected.courses <- c(
-          which(local.schedule$Course=="(BIO 260) Ecology"),
-          which(local.schedule$Course=="(BIO 269) Ecology Lab"),
-          which(local.schedule$Course=="(BIO 280) Evolution"),
-          which(local.schedule$Course=="(BIO 281) Evolution Lab")
-        )
-      }
+    #   if(semester.index==1) { #hardcoding 150 just to start
+    #     selected.courses <- which(grepl("BIO 150", local.schedule$Course))
+    #   }
+    #   if(semester.index==2) { #hard coding the 200 level required courses
+    #     selected.courses <- c(
+    #       which(local.schedule$Course=="(BIO 260) Ecology"),
+    #       which(local.schedule$Course=="(BIO 269) Ecology Lab"),
+    #       which(local.schedule$Course=="(BIO 280) Evolution"),
+    #       which(local.schedule$Course=="(BIO 281) Evolution Lab")
+    #     )
+    #   }
+	  print(local.schedule[selected.courses,])
       schedule <- rbind(schedule, local.schedule[selected.courses,])
       all.matches <- which(course.semester.pairs$Course %in% schedule$Course)
       all.matches <- all.matches[!is.na(all.matches)]
       if(length(all.matches)>0) {
         course.semester.pairs <- course.semester.pairs[-all.matches,]
       }
-      if(semester.index==1) {
-        course.semester.pairs <- course.semester.pairs[-which(grepl("BIO 1", course.semester.pairs$Course)),] #only take one Bio 100 level course
-      }
+     # if(semester.index==1) {
+     #   course.semester.pairs <- course.semester.pairs[-which(grepl("BIO 1", course.semester.pairs$Course)),] #only take one Bio 100 level course
+     # }
     }
   }
   schedule <- schedule[1:min(nrow(schedule),max.courses),]
@@ -219,13 +257,13 @@ optimize.valid.schedule <- function(course.semester.pairs=course.semester.pairs.
 
   courses <- sort(unique(course.semester.pairs$Course))
   names(courses) <- courses
-  course.semester.pairs.to.prioritize <- course.semester.pairs[which(as.numeric(course.semester.pairs$Semester)>2019.6),]
+  course.semester.pairs.to.prioritize <- course.semester.pairs[which(as.numeric(course.semester.pairs$Semester)>as.numeric(format(Sys.time(), "%Y.%m"))),]
   priority.courses <- sort(unique(course.semester.pairs.to.prioritize$Course))
   names(priority.courses) <- priority.courses
-  priority.courses <- courses[-which(grepl("BIO", priority.courses))]
+#  priority.courses <- courses[-which(grepl("BIO", priority.courses))]
   track.vector <- generate.track.vector()
   ui <- fluidPage(
-    titlePanel("Sample EEB undergraduate schedule generator"),
+    titlePanel("EEB undergraduate potential schedule generator"),
     sidebarLayout(position = "left",
 
                   sidebarPanel(
@@ -238,12 +276,14 @@ optimize.valid.schedule <- function(course.semester.pairs=course.semester.pairs.
                     h4("Other constraints"),
                     checkboxInput("summer", "Allow summer courses", FALSE),
                     checkboxInput("level500", "Allow 500 level courses", FALSE),
-                    checkboxGroupInput("tracks", "Track, if any, to prioritize:",
+                    checkboxGroupInput("tracks", "Focus, if any, to prioritize:",
                                 choices=names(track.vector)),
                     checkboxGroupInput("variable", "Courses to prioritize:",
                                        choices=priority.courses )
                   ),
                   mainPanel(
+					  p("This includes EEB courses that give credit within the concentration. Students are encouraged to consider courses in departments such as anthropology, biochemistry, chemistry, forestry, geography, geology, microbiology and wildlife & fisheries that also meet EEB requirements, though their five year schedule is not available. Note that this tool is based on EEB's five year course plan, but it is subject to change: we may offer additional courses, a faculty member may go on development or family leave, someone may retire early, and so forth. It also does not check to make sure there are no course schedule overlaps during a semester -- we try to avoid these, but they must still sometimes occur."),
+					  p("To use this tool, select options on the left and it will create a schedule for you. You can try changing settings to generate new possible schedules -- are there certain courses you want to take, do you want to take summer courses, etc. You should still check your schedule with your advisors to make sure they hit all the requirements for the concentration and graduation in general, but this can be helpful in planning out the future (and for those not yet in EEB, figuring out what you could do in EEB). If there are any questions about the tool, reach out to Brian O'Meara, bomeara@utk.edu."),
                     tableOutput("data")
                   )
     )

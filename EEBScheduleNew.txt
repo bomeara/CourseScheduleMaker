@@ -1,4 +1,4 @@
-	Fall 2020	Spring 2021	Summer 2021	Fall 2021	Spring 2022	Summer 2022	Fall 2022	Spring 2023	Summer 2023	Fall 2023	Spring 2024	Summer 2024	Fall 2024	Spring 2025	Summer 2024
+	Fall 2020	Spring 2021	Summer 2021	Fall 2021	Spring 2022	Summer 2022	Fall 2022	Spring 2023	Summer 2023	Fall 2023	Spring 2024	Summer 2024	Fall 2024	Spring 2025	Summer 2025
 EEB 205 Methods & Theory in EEB					X						X				
 EEB 240 Human Anatomy	X	X		X	X		X	X		X	X		X	X 	
 EEB 304 Soc Econ Plants		X			X			X			X			X 	
