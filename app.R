@@ -46,7 +46,7 @@ extract.course.number <- function(x) {
 # }
 
 
-course.semester.pairs.generate <- function(schedule=read.schedule()) {
+course.semester.pairs.generate <- function(schedule=read.schedule(), courses=read.course.info()) {
 	course.grid <- schedule
 	colnames(course.grid) <- sapply(colnames(course.grid), convert.to.numeric.semester)
 	course.semester.pairs <- data.frame(matrix(nrow=0, ncol=3))
@@ -61,6 +61,7 @@ course.semester.pairs.generate <- function(schedule=read.schedule()) {
 	course.semester.pairs <- course.semester.pairs[order(course.semester.pairs$Semester),]
 	course.semester.pairs$Semester <- as.character(course.semester.pairs$Semester)
 	course.semester.pairs <- course.semester.pairs[which(nchar(course.semester.pairs$Course)>0),]
+	course.semester.pairs <- course.semester.pairs[course.semester.pairs$Course.Number %in%  courses$Course.Number,]
 	return(course.semester.pairs)
 }
 
