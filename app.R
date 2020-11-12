@@ -62,6 +62,8 @@ course.semester.pairs.generate <- function(schedule=read.schedule(), courses=rea
 	course.semester.pairs$Semester <- as.character(course.semester.pairs$Semester)
 	course.semester.pairs <- course.semester.pairs[which(nchar(course.semester.pairs$Course)>0),]
 	course.semester.pairs <- course.semester.pairs[course.semester.pairs$Course.Number %in%  courses$Course.Number,]
+	course.semester.pairs <- course.semester.pairs[which(as.numeric(course.semester.pairs$Semester)>as.numeric(format(Sys.time(), "%Y.%m"))),]
+	
 	return(course.semester.pairs)
 }
 
@@ -283,8 +285,8 @@ optimize.valid.schedule <- function(course.semester.pairs=course.semester.pairs.
                                        choices=priority.courses )
                   ),
                   mainPanel(
-					  p("This includes EEB courses that give credit within the concentration. Students are encouraged to consider courses in departments such as anthropology, biochemistry, chemistry, forestry, geography, geology, microbiology and wildlife & fisheries that also meet EEB requirements, though their five year schedule is not available. Note that this tool is based on EEB's five year course plan, but it is subject to change: we may offer additional courses, a faculty member may go on development or family leave, someone may retire early, and so forth. It also does not check to make sure there are no course schedule overlaps during a semester -- we try to avoid these, but they must still sometimes occur."),
-					  p("To use this tool, select options on the left and it will create a schedule for you. You can try changing settings to generate new possible schedules -- are there certain courses you want to take, do you want to take summer courses, etc. You should still check your schedule with your advisors to make sure they hit all the requirements for the concentration and graduation in general, but this can be helpful in planning out the future (and for those not yet in EEB, figuring out what you could do in EEB). If there are any questions about the tool, reach out to Brian O'Meara, bomeara@utk.edu."),
+					  p("To use this tool to plan EEB courses over the next 4 semesters, select options on the left and it will create a schedule for you. You can try changing settings to generate new possible schedules. Confer with your advisor to check your schedule to make sure it meets all the requirements for the concentration and graduation in general. This tool is designed to be helpful in planning out the future (and for those not yet in EEB, figuring out what you could do in EEB). If there are any questions about the tool, reach out to Brian O'Meara, bomeara@utk.edu."),
+					  p("This tool includes EEB courses that give credit within the concentration. Students are encouraged to consider approved courses in departments such as anthropology, biochemistry, chemistry, forestry, geography, geology, microbiology and wildlife & fisheries that also meet EEB requirements, though their five year schedule is not available (the list of approved courses in other departments is available in the catalog). Note that this tool is based on EEB's five year course plan, but it is subject to change: we may offer additional courses, a faculty member may go on development or family leave, someone may retire early, and so forth. It also does not check to make sure there are no course schedule overlaps during a semester -- we try to avoid these, but they must still sometimes occur."),
                     tableOutput("data")
                   )
     )
@@ -294,6 +296,8 @@ optimize.valid.schedule <- function(course.semester.pairs=course.semester.pairs.
   server <- function(input, output) {
     output$data <- renderTable({
       course.semester.pairs<-course.semester.pairs.generate()
+      #course.semester.pairs <- course.semester.pairs[which(as.numeric(course.semester.pairs$Semester)>as.numeric(format(Sys.time(), "%Y.%m"))),]
+      
       track.vector <- generate.track.vector()
       courses <- sort(unique(course.semester.pairs$Course))
       course.preferences <- rep(0.01, length(courses))

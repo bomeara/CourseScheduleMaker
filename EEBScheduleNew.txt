@@ -19,7 +19,7 @@ EEB 407 Sen Hons Thesis	X	X		X	X		X	X		X	X		X	X
 EEB 409 Persp E & E															
 EEB 410 Eco-Evo-Devo								X							
 EEB 411 Biostatistics	X	X		X	X		X	X		X	X		X	X	
-EEB 412 Env Toxicology	X			X			X			X			X		
+EEB 412 Env Toxicology	X														
 EEB 413 Art & Organism															
 EEB 414 Plant Anatomy					X						X				
 EEB 415 Field Ecology				X						X					
